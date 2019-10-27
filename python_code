@@ -1,0 +1,57 @@
+# Reading excel data and making report.
+import pandas as pd
+
+#This sheet includs 2 sheets.
+new_models = pd.read_excel('field-information.xlsx',sheet_name = "new models")
+old_models = pd.read_excel('field-infomation.xlsx',sheet_name = "old models")
+
+#Erasing data from excel data of new models.
+df =pd.DataFrame(new_models)
+df = df.drop([ "part name", "failure situation", "Subject", "Handling by" , "Failure date" , "remark", "Unnamed: 16"], axis=1)
+df = df.dropna(how='all')
+
+#Add the aditional information.For example 'km' to mileage.
+df['mileage'] = df['mileage'].astype(str) + 'km'
+
+#Some model is just number. It needs taranslating as str.
+df['Serial number'] = df['Serial number'].astype(str)
+df['MODEL-TYPE'] = df['MODEL-TYPE'].str.strip('new models')
+
+#Countermesured topic is deleted from report.
+countermesured1 = df['category']=='countermesured topic'
+C1 = countermesured1 .sum()
+
+#Contents order is modified and editing as 1 sentence.
+df = df[df["category"] != 'countermesured topic']
+df['update'] =df['MODEL-TYPE'] +','+ df['Serial number'] + ',' +df['mileage'] + ',' + df['Country'] + ',' + df['category'] +',' + df['handling number']
+df = df.drop([ "Number","Model-type", "serial number", "mileage" , "Country" , "category"], axis=1)
+df1=df
+
+
+#Information of old models is also edited by following program.
+df =pd.DataFrame(old_models)
+df = df.drop([ "part name", "failure situation", "Subject", "Handling by" , "Failure date" , "remark", "Unnamed: 16"], axis=1)
+df = df.dropna(how='all')
+
+df['mileage'] = df['mileage'].astype(str) + 'km'
+df['Serial number'] = df['Serial number'].astype(str)
+
+df['MODEL-TYPE'] = df['MODEL-TYPE'].str.strip('old models')
+
+countermesured2 = df['category']=='countermesured topic'
+C2 = countermesured2 .sum()
+
+df['update'] =df['MODEL-TYPE'] +','+ df['Serial number'] + ',' +df['mileage'] + ',' + df['Country'] + ',' + df['category'] +',' + df['handling number']
+df = df.drop([ "Number","Model-type", "serial number", "mileage" , "Country" , "category"], axis=1)
+
+
+# Total countermesured topic are calculated.
+df = df[df["category"] != 'countermesured topic']
+total_countermesured = C1 + C2
+
+#Sentence for report is outputted to xlsx files.
+with pd.ExcelWriter('repot.xlsx') as writer:
+    df1.to_excel(writer,sheet_name = 'new models')
+    df.to_excel(writer,sheet_name = 'old models')
+
+print('Counts of countermesured :',total_countermesured)
